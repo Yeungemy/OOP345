@@ -1,0 +1,356 @@
+/**********************************************************************
+OOP244 Milestone 6: Compiling modular source code
+File: comments.txt
+Date: Aug 4, 2017
+Course section: SAB
+Author: Emy Yeung
+ID:   026-302-117
+email: htzheng@myseneca.ca
+**********************************************************************/
+
+Citation: I code this fina project independently according course materials.
+	
+
+Enhancemets
+
+1. AmaPerishable.cpp
+	// read data members from the buffer
+	std::istream& AmaPerishable::read(std::istream& istr) {
+		AmaProduct::read(istr);
+		if (AmaProduct::err_.isClear()) {
+			std::cout << "Expiry date (YYYY/MM/DD): ";
+			Date temp;
+			// Enhanced: call overload operator >> from Date.cpp
+			istr >> temp;
+			if (temp.bad()) {
+				switch (temp.errCode()) {
+				case CIN_FAILED:
+					istr.setstate(ios::failbit);
+					err_.message("Invalid Date Entry");
+					break;
+				case YEAR_ERROR:
+					istr.setstate(ios::failbit);
+					err_.message("Invalid Year in Date Entry");
+					break;
+				case MON_ERROR:
+					istr.setstate(ios::failbit);
+					err_.message("Invalid Month in Date Entry");
+					break;
+				case DAY_ERROR:
+					istr.setstate(ios::failbit);
+					err_.message("Invalid Day in Date Entry");
+					break;
+				}
+				istr.setstate(ios::failbit);
+				// enhanced: delete set instance variables to zero
+			}
+			else {
+				this->expiry_ = temp;
+			}
+		}
+		return istr;
+	}
+}
+
+	// default constructor
+	AmaPerishable::AmaPerishable(char fileTag) : AmaProduct(fileTag) {
+		// enhanced: add unit() function to set unit_ as empty 
+		unit("");
+	}
+
+
+2.AmaProduct.cpp: add Empty check
+	// prints the prodcut in the format of form or linear
+	std::ostream& AmaProduct::write(std::ostream& ostr, bool linear)const {
+		if (!(err_.isClear())) {
+			ostr << err_.message();
+		}
+		else {
+			// Enchance: add Empty check
+			if (!isEmpty()) {
+			switch (linear) {
+			case true:
+				ostr << setw(7) << setfill(' ') << left << sku() << "|"
+						<< setw(20) << setfill(' ') << left << name() << "|"
+						<< setw(7) << setfill(' ') << fixed << setprecision(2) << right << cost() << "|"
+						<< setw(4) << setfill(' ') << right << quantity() << "|"
+						<< setw(10) << setfill(' ') << left << unit() << "|"
+						<< setw(4) << setfill(' ') << right << qtyNeeded() << "|";
+					break;
+				case false:
+					ostr << "Sku: " << sku() << endl
+						<< "Name: " << name() << endl
+						<< "Price: " << price() << endl;
+					taxed() ? ostr << "Price after tax: " << cost() << endl :
+						ostr << "Price after tax: " << "N/A" << endl;
+					ostr << "Quantity On Hand: " << quantity() << " " << unit() << endl
+						<< "Quantity Needed: " << qtyNeeded();
+					break;
+				}
+			    }			
+			}
+			return ostr;
+		    }
+
+	// ouput the product to the compiler
+	std::fstream& AmaProduct::store(std::fstream& file, bool addNewLine)const {
+	// Enhance: add empty check
+		if (!isEmpty()) {
+			 file << fileTag_ << "," << sku() << "," << name() << "," << price() << ","
+				<< taxed() << "," << quantity() << "," << unit() << "," << qtyNeeded();
+			 if (addNewLine == true) {
+				file << endl;
+			}
+	       }		
+	return file;
+	}
+
+
+	// prints the prodcut in the format of form or linear
+	std::ostream& AmaProduct::write(std::ostream& ostr, bool linear)const {
+		if (!(err_.isClear())) {
+			ostr << err_.message() << endl;
+		}
+		else {
+			// Enchance: add Empty check
+			if (!isEmpty()) {
+				switch (linear) {
+				case true:
+					ostr << setw(7) << setfill(' ') << left << sku() << "|"
+						<< setw(20) << setfill(' ') << left << name() << "|"
+						<< setw(7) << setfill(' ') << fixed << setprecision(2) << right << cost() << "|"
+						<< setw(4) << setfill(' ') << right << quantity() << "|"
+						<< setw(10) << setfill(' ') << left << unit() << "|"
+						<< setw(4) << setfill(' ') << right << qtyNeeded() << "|";
+					break;
+				case false:
+					ostr << "Sku: " << sku() << endl
+						<< "Name: " << name() << endl
+						<< "Price: " << price() << endl;
+					taxed() ? ostr << "Price after tax: " << cost() << endl :
+						ostr << "Price after tax: " << "N/A" << endl;
+					ostr << "Quantity On Hand: " << quantity() << " " << unit() << endl
+						<< "Quantity Needed: " << qtyNeeded() << endl;
+					break;
+				}
+			}
+		}
+		return ostr;
+	}
+
+	// Receives the values using istream
+	std::istream& AmaProduct::read(std::istream& istr) {
+		char c[2000] = { '\0' };
+		int q = 0;
+		double x = 0.0;
+		bool t = true;
+		
+		std::cout << "Sku: ";
+		// enhanced: MAX_SKU_LEN rather than MAX_SKU_LEN + 1
+		istr.getline(c, MAX_SKU_LEN, '\n');
+		sku(c);
+		std::cout << "Name: ";
+		istr.getline(c, 20, '\n');
+		name(c);
+		std::cout << "Unit: ";
+		// enhanced: change 11 to 10
+		istr.getline(c, 10, '\n');
+		unit(c);
+		std::cout << "Taxed? (y/n): ";
+		istr>>c;
+		// Check the character entered for state of tax
+		switch (c[0]) {
+		case 'y':
+		case 'Y':
+			t = true;
+			break;
+		case 'N':
+		case 'n':
+			t = false;
+			break;
+		default:
+			istr.setstate(ios::failbit);
+			err_.message("Only (Y)es or (N)o are acceptable");
+			break;
+		}
+			if ((err_.isClear())) {
+				taxed(t);
+				std::cout << "Price: ";
+				istr >> x;
+				if (istr.fail()) {
+					istr.setstate(ios::failbit);
+					err_.message("Invalid Price Entry");
+				}
+				else {
+					price(x);
+					std::cout << "Quantity On hand: ";
+					istr >> q;
+					if (istr.fail()) {
+						istr.setstate(ios::failbit);
+						err_.message("Invalid Quantity Entry");
+					}
+					else {
+						quantity(q);
+						std::cout << "Quantity Needed: ";
+						istr >> q;
+						if (istr.fail()) {
+							istr.setstate(ios::failbit);
+							err_.message("Invalid Quantity Needed Entry");
+						}
+						else {
+							qtyNeeded(q);
+						}
+					}
+				}
+				// Enhanced: delete not clear() check
+			}		
+		return istr;
+	}
+	
+3. ErrorMessage.cpp
+		// copy constructor
+	ErrorMessage::ErrorMessage(const char* errorMessage) {
+		// Enhance: delete "message_ = nullptr"
+		// call the message set function
+		message(errorMessage);
+	}
+
+	// A  assignment operator overload
+	ErrorMessage& ErrorMessage::operator=(const char* errorMessage) {
+		// Enhance: delete clear() function call
+		clear();
+		message(errorMessage);
+		return *this;
+	}
+
+	// Sets the message_ of the errorMessage object to a new value
+	void ErrorMessage::message(const char* value) {
+		clear();
+		int size = strlen(value);
+		message_ = new char[size + 1];
+		if (value != nullptr && value[0] != '\0') {
+			strncpy(message_, value, size);
+			message_[size] = '\0';
+		}
+		// enhance: change call empty safty constructor to directly set it to nullptr
+		else {
+			message_ = nullptr;
+		}
+	}
+
+4. Product.cpp
+	// set SKU
+	void Product::sku(const char* s) {
+		sku_[0] = '\0';
+		if (s != nullptr) {
+			int n = sizeof(s) / sizeof(s[0]);
+			n = n > MAX_SKU_LEN ? MAX_SKU_LEN : n;
+			// enhance: delete for loop 
+			strncpy(sku_, s, n);	
+			sku_[n] = '\0';
+		}
+	}
+
+
+		// set quantity on hand
+	void Product::quantity(const int qty) {
+		// enhance: including 0
+		quantity_ = qty >= 0 ? qty : 0;
+	}
+
+	// set quantity needed
+	void Product::qtyNeeded(const int qtyAsked) {
+		// enhance: including 0
+		qtyNeeded_ = qtyAsked >= 0 ? qtyAsked : 0;
+	}
+
+	// set price
+	void Product::price(const double p) {
+		// enhance: including 0
+		price_ = p >= 0.00 ? p : 0.00;
+	}
+
+	// get the total cost of the product on hand
+	double operator+=(double& lhs, const Product& rhs) {
+		// enhance: calculate total cost of the item
+		double subTotal = rhs.quantity() * rhs.cost();
+		lhs += subTotal;
+		return lhs;
+	}
+
+5. Date.cpp
+
+	// istream  and ostream read and write methods
+	std::istream& Date::read(std::istream& istr) {
+		int yy = 0, mm = 0, dd = 0;
+		char dummy = '0';
+
+		// read input
+		istr >> yy >> dummy >> mm >> dummy >> dd;
+		if (istr.fail()) {
+			this->readErrorCode_ = CIN_FAILED;
+			// enhanced: add clear and ignor function
+			cin.clear();
+			cin.ignore();
+		}
+		else { // Enhanced: create a temp Date object to hold the input
+			   // set input data as instance variables of temp Date object
+			Date temp(yy, mm, dd);
+			*this = temp;
+			if (year_ < MIN_YEAR || year_ > MAX_YEAR) {
+				this->readErrorCode_ = YEAR_ERROR;
+			}
+			else {
+				if (mon_ < 1 || mon_ >12) {
+					this->readErrorCode_ = MON_ERROR;
+				}
+				else {
+					if (day_ < 0 || day_ > mdays(mm)) {
+						this->readErrorCode_ = DAY_ERROR;
+					}
+					else {
+						readErrorCode_ = NO_ERROR;
+						// enhanced assign temp to current object
+						*this = temp;
+					}
+				}
+			}
+		}
+		return istr;
+	}
+
+	std::ostream& Date::write(std::ostream& ostr)const {
+		// Enhanced: using iomanip.h
+		ostr << year_ << "/" << setfill('0')
+			<< setw(2) << mon_ << "/"
+			<< setw(2) << day_;
+		return ostr;
+	}
+
+
+6. ErrorMessage.cpp
+	// copy constructor
+	ErrorMessage::ErrorMessage(const char* errorMessage) {
+		// Enhance: delete "message_ = nullptr"
+		// call the message set function
+		message(errorMessage);
+	}
+
+	// A  assignment operator overload
+	ErrorMessage& ErrorMessage::operator=(const char* errorMessage) {
+		// Enhance: delete clear() function call
+		message(errorMessage);
+		return *this;
+	}
+
+	// Sets the message_ of the errorMessage object to a new value
+	void ErrorMessage::message(const char* value) {
+		clear();
+		int size = strlen(value);
+		// enhance: change call empty safty constructor
+		message_ = new char[size + 1];
+		if (value != nullptr && value[0] != '\0') {
+			strncpy(message_, value, size);
+			message_[size] = '\0';
+		}
+	}

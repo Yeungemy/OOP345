@@ -1,0 +1,13 @@
+/**********************************************************************
+OOP345 Workshop 1 - From One Translation Unit to Another 
+ File: reflect.txt 
+ Date: 2017-11-13
+ Course section: SAB
+ Author: Emy Yeung
+ ID:   026-302-117
+ email: htzheng@myseneca.ca
+ **********************************************************************/
+
+From this workshop what I have learned as follows:
+1.	I review how using safe guard definition, namespace, and scope of variables.
+2. 	How to add arguments for int main() function: for example, XCode steps to add 		arguments is click top left file name, then choose ‘edit scheme’, then click 	‘arguments’, then click ‘+’, then fill out all the arguments I want.
